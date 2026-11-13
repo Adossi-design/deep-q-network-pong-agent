@@ -23,7 +23,7 @@ def get_args():
     parser.add_argument(
         "--model",
         type=str,
-        required=True,
+        default="dqn_model.pth",
         help="Path to the trained .pth model file."
     )
 
