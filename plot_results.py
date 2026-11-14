@@ -18,11 +18,11 @@ from pathlib import Path
 
 import matplotlib
 
-matplotlib.use("Agg")  # save images to files without opening a window
+matplotlib.use("Agg")  
 import matplotlib.pyplot as plt
 import numpy as np
 
-WINDOW = 100  # number of episodes used for the moving average
+WINDOW = 100  
 
 
 def read_log(log_path):
@@ -90,17 +90,16 @@ def plot_single_log(log_path, out_dir):
 
 def plot_comparison(member_dir, out_dir):
     """Draw the 100-episode average reward of every experiment on one chart."""
-    log_paths = sorted(member_dir.rglob("*.csv"))
+    # train.py saves each experiment as expXX.pth and expXX_log.csv
+    log_paths = sorted(member_dir.glob("*_log.csv"))
     if not log_paths:
-        print(f"No CSV logs found in {member_dir}")
+        print(f"No *_log.csv files found in {member_dir}")
         return
 
     plt.figure(figsize=(10, 6))
     for log_path in log_paths:
         log = read_log(log_path)
-        # Label each line with its experiment folder (e.g. exp02),
-        # or with the file name if the log sits directly in the member folder.
-        label = log_path.parent.name if log_path.parent != member_dir else log_path.stem
+        label = log_path.stem.replace("_log", "")  # exp01_log -> exp01
         plt.plot(log["episode"], moving_average(log["reward"]), label=label)
 
     plt.legend(fontsize=8)
