@@ -1,15 +1,9 @@
-"""Turn DQN training logs into plots.
+"""Turn the DQN training logs into reward, episode length and steps plots.
 
-Single log mode (one training run):
-    uv run plot_results.py models/test/test_run_log.csv plots/test
-    -> reward.png, episode_length.png, steps.png
+Author: Larissa Iriza
 
-Comparison mode (all experiments of one member):
-    uv run plot_results.py models/Larissa_Iriza plots/Larissa_Iriza
-    -> experiments_comparison.png
-
-Every log is a CSV with one row per episode and the columns:
-episode,episode_length,total_steps,reward,epsilon
+One log:          uv run plot_results.py models/test/test_run_log.csv plots/test
+All experiments:  uv run plot_results.py models/Larissa_Iriza plots/Larissa_Iriza
 """
 
 import argparse
@@ -26,16 +20,12 @@ WINDOW = 100
 
 
 def read_log(log_path):
-    """Load a log CSV into a numpy array whose columns are accessed by name."""
+    """Load a log CSV so each column can be used by its name."""
     return np.genfromtxt(log_path, delimiter=",", names=True, ndmin=1)
 
 
 def moving_average(values, window=WINDOW):
-    """Average of the last `window` values at each episode.
-
-    For the first episodes, there are fewer than `window` values,
-    so we average everything seen so far.
-    """
+    """Average of the last `window` values at each episode."""
     averages = []
     for i in range(len(values)):
         start = max(0, i - window + 1)
@@ -44,7 +34,7 @@ def moving_average(values, window=WINDOW):
 
 
 def save_plot(out_dir, file_name, title, x_label, y_label):
-    """Add the title and labels, then save the current figure as a PNG."""
+    """Add the title and labels, then save the figure as a PNG."""
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
@@ -56,7 +46,7 @@ def save_plot(out_dir, file_name, title, x_label, y_label):
 
 
 def plot_reward(log, out_dir):
-    """Reward per episode (light) with the 100-episode average on top (dark)."""
+    """Reward per episode with the 100-episode average on top."""
     plt.figure(figsize=(10, 5))
     plt.plot(log["episode"], log["reward"], color="tab:blue", alpha=0.3, label="Reward per episode")
     plt.plot(log["episode"], moving_average(log["reward"]), color="tab:blue", label=f"{WINDOW}-episode average")
@@ -65,7 +55,7 @@ def plot_reward(log, out_dir):
 
 
 def plot_episode_length(log, out_dir):
-    """How many steps each episode lasted. Longer Pong games mean more ball returns."""
+    """Steps per episode. Longer Pong games mean more ball returns."""
     plt.figure(figsize=(10, 5))
     plt.plot(log["episode"], log["episode_length"], color="tab:green", alpha=0.3, label="Episode length")
     plt.plot(log["episode"], moving_average(log["episode_length"]), color="tab:green", label=f"{WINDOW}-episode average")
@@ -74,7 +64,7 @@ def plot_episode_length(log, out_dir):
 
 
 def plot_steps(log, out_dir):
-    """Total training steps reached by each episode."""
+    """Total training steps reached at each episode."""
     plt.figure(figsize=(10, 5))
     plt.plot(log["episode"], log["total_steps"], color="tab:orange")
     save_plot(out_dir, "steps.png", "Total Training Steps", "Episode", "Total steps")
@@ -89,9 +79,8 @@ def plot_single_log(log_path, out_dir):
 
 
 def plot_comparison(member_dir, out_dir):
-    """Draw the 100-episode average reward of every experiment on one chart."""
-    # train.py saves each experiment as expXX.pth and expXX_log.csv
-    log_paths = sorted(member_dir.glob("*_log.csv"))
+    """Average reward of every experiment in a member's folder on one chart."""
+    log_paths = sorted(member_dir.glob("*_log.csv"))  
     if not log_paths:
         print(f"No *_log.csv files found in {member_dir}")
         return
@@ -99,12 +88,12 @@ def plot_comparison(member_dir, out_dir):
     plt.figure(figsize=(10, 6))
     for log_path in log_paths:
         log = read_log(log_path)
-        label = log_path.stem.replace("_log", "")  # exp01_log -> exp01
-        plt.plot(log["episode"], moving_average(log["reward"]), label=label)
+        label = log_path.stem.replace("_log", "")  
+        plt.plot(log["total_steps"], moving_average(log["reward"]), label=label)
 
     plt.legend(fontsize=8)
     title = f"{member_dir.name}: {WINDOW}-episode Average Reward per Experiment"
-    save_plot(out_dir, "experiments_comparison.png", title, "Episode", "Average reward")
+    save_plot(out_dir, "experiments_comparison.png", title, "Total steps", "Average reward")
 
 
 def main():
